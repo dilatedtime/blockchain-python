@@ -6,7 +6,7 @@
 - Install pipenv: `pip3 install pipenv`
 - Make a env with Pipenv: `pipenv sync`
 - Run the servers:
-  - Run the miner server using `python -m frontend`
+  - Run the miner server using `python -m blockchain`
   - Run the clients using `python -m client <PORT-HERE>`
 
 You can visit the site, play with the server, client and more, OR Use postman to Play and Mess with the
