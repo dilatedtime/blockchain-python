@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pilot Chain | Dashboard</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-body: #0f172a;       
+            --bg-sidebar: #1e293b;    
+            --bg-card: #334155;       
+            --text-main: #f8fafc;     
+            --text-muted: #cbd5e1;
+            --accent: #8b5cf6;        
+            --accent-hover: #7c3aed;
+            --border: #475569;
+            --input-bg: #1e293b;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* Visibility Fixes */
+        .text-muted { color: var(--text-muted) !important; }
+        .form-label { color: #e2e8f0; font-weight: 500; }
+        .form-control, .form-select {
+            background-color: var(--input-bg) !important;
+            border: 1px solid var(--border);
+            color: #ffffff !important;
+            padding: 12px 15px;
+        }
+        .form-control::placeholder { color: #94a3b8 !important; opacity: 1; }
+        .form-control:read-only { background-color: #0f172a !important; color: #94a3b8 !important; cursor: not-allowed; }
+
+        /* Sidebar & Layout */
+        .wrapper { display: flex; min-height: 100vh; }
+        .sidebar {
+            width: 260px;
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            position: fixed;
+            height: 100%;
+            z-index: 100;
+        }
+        .main-content { flex: 1; margin-left: 260px; padding: 30px; }
+        
+        .nav-link {
+            color: var(--text-muted);
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .nav-link:hover { background-color: rgba(255,255,255,0.05); color: white; }
+        .nav-link.active { background-color: var(--accent); color: white; }
+        .nav-link i { width: 20px; text-align: center; }
+
+        .content-section { display: none; animation: fadeIn 0.3s ease; }
+        .content-section.active { display: block; }
+        .card {
+            background-color: var(--bg-sidebar);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+            margin-bottom: 20px;
+        }
+        .card-header { background-color: rgba(0,0,0,0.2); border-bottom: 1px solid var(--border); padding: 15px 20px; font-weight: 600; color: white; }
+        .btn-primary { background-color: var(--accent); border: none; padding: 10px 20px; color: white; }
+        .btn-primary:hover { background-color: var(--accent-hover); }
+        .hash-box {
+            font-family: 'Courier New', monospace;
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 6px;
+            word-break: break-all;
+            font-size: 0.9rem;
+            color: #fbbf24;
+            border: 1px dashed var(--border);
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+<div class="wrapper">
+    <nav class="sidebar">
+        <div class="d-flex align-items-center mb-4 px-2">
+            <i class="fa-solid fa-cube fa-2x text-accent me-3"></i>
+            <div>
+                <h5 class="m-0 fw-bold text-white">Pilot Chain</h5>
+                <small class="text-muted" style="font-size: 0.75rem;">Node ID: <span id="nav-node-id">Connecting...</span></small>
+            </div>
+        </div>
+        
+        <div class="nav flex-column">
+            <div class="nav-link active" onclick="showSection('dashboard')">
+                <i class="fa-solid fa-chart-line"></i> Dashboard
+            </div>
+            <div class="nav-link" onclick="showSection('wallet')">
+                <i class="fa-solid fa-wallet"></i> My Wallet
+            </div>
+            <div class="nav-link" onclick="showSection('transact')">
+                <i class="fa-solid fa-paper-plane"></i> Send Coins
+            </div>
+            <div class="nav-link" onclick="showSection('mining')">
+                <i class="fa-solid fa-hammer"></i> Mining Station
+            </div>
+            <div class="nav-link" onclick="showSection('explorer')">
+                <i class="fa-solid fa-list"></i> Chain Explorer
+            </div>
+        </div>
+
+        <div class="mt-auto px-2">
+            <div class="card bg-dark border-secondary p-3">
+                <small class="text-muted d-block mb-1">Network Status</small>
+                <div class="d-flex align-items-center">
+                    <div id="status-dot" style="width: 10px; height: 10px; background-color: #dc2626; border-radius: 50%; margin-right: 8px;"></div>
+                    <span id="network-status" class="text-white">Offline</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <div id="dashboard" class="content-section active">
+            <h2 class="mb-4 text-white">Network Overview</h2>
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="card p-4">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h6 class="text-muted text-uppercase mb-2">Blocks Mined</h6>
+                                <h2 class="fw-bold mb-0 text-white" id="dash-chain-length">0</h2>
+                            </div>
+                            <i class="fa-solid fa-cubes fa-2x text-accent opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card p-4">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h6 class="text-muted text-uppercase mb-2">Pending Txs</h6>
+                                <h2 class="fw-bold mb-0 text-white" id="dash-pool-size">0</h2>
+                            </div>
+                            <i class="fa-solid fa-clock fa-2x text-warning opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card p-4">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h6 class="text-muted text-uppercase mb-2">Node Balance</h6>
+                                <h2 class="fw-bold mb-0 text-white" id="dash-balance">0.00</h2>
+                            </div>
+                            <i class="fa-solid fa-coins fa-2x text-success opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card mt-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="fa-solid fa-rss me-2"></i>Recent Activity</span>
+                    <button onclick="refreshData()" class="btn btn-sm btn-outline-light"><i class="fa-solid fa-sync"></i></button>
+                </div>
+                <div class="card-body">
+                    <div id="recent-activity-list" class="text-muted text-center py-3">No recent transactions found.</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="wallet" class="content-section">
+            <h2 class="mb-4 text-white">My Wallet</h2>
+            <div class="alert alert-info border-0 mb-4" style="background: rgba(56, 189, 248, 0.1); color: #7dd3fc;">
+                <i class="fa-solid fa-info-circle me-2"></i>
+                <strong>Note:</strong> Keys are generated locally in your browser.
+            </div>
+            <div class="row g-4">
+                <div class="col-lg-6">
+                    <div class="card h-100">
+                        <div class="card-header">Create Identity</div>
+                        <div class="card-body">
+                            <button onclick="generateKeys()" class="btn btn-primary w-100 mb-4 py-3 fw-bold">
+                                <i class="fa-solid fa-magic me-2"></i> Generate New Key Pair
+                            </button>
+                            <hr class="border-secondary my-4">
+                            <label class="form-label">Already have a key?</label>
+                            <div class="input-group">
+                                <input type="text" id="import-key-input" class="form-control" placeholder="Paste Private Key Hex...">
+                                <button onclick="importKey()" class="btn btn-outline-light">Import</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="card h-100">
+                        <div class="card-header">Your Active Keys</div>
+                        <div class="card-body">
+                            <label class="form-label text-accent fw-bold small text-uppercase">Public Address</label>
+                            <div class="hash-box mb-4" id="wallet-address">Not Generated Yet</div>
+                            <label class="form-label text-danger fw-bold small text-uppercase">Private Key</label>
+                            <div class="hash-box mb-4 text-white" id="wallet-privkey">Not Generated Yet</div>
+                            <div class="mt-auto text-center pt-3 border-top border-secondary">
+                                <h5 class="text-muted">Wallet Balance</h5>
+                                <h2 id="wallet-specific-balance" class="text-white">0.00</h2>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="transact" class="content-section">
+            <h2 class="mb-4 text-white">Send Coins</h2>
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-body p-4">
+                            <div class="mb-4">
+                                <label class="form-label text-accent fw-bold">From (My Address)</label>
+                                <input type="text" id="tx-sender" class="form-control" readonly placeholder="Go to Wallet tab first">
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label">To (Recipient Address)</label>
+                                <input type="text" id="tx-recipient" class="form-control" placeholder="e.g. 0xabc123...">
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label">Amount</label>
+                                <input type="number" id="tx-amount" class="form-control" placeholder="0.00">
+                            </div>
+                            <button onclick="sendTransaction()" id="btn-send" class="btn btn-primary w-100 py-3 fw-bold">
+                                <i class="fa-solid fa-paper-plane me-2"></i> Sign & Send Transaction
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="mining" class="content-section">
+            <h2 class="mb-4 text-white">Mining Station</h2>
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card mb-4">
+                        <div class="card-body text-center py-5">
+                            <i class="fa-solid fa-hammer fa-3x text-accent mb-4"></i>
+                            <h3 class="text-white">Proof of Work</h3>
+                            <button onclick="mineBlock()" id="btn-mine" class="btn btn-primary btn-lg px-5 rounded-pill mt-3">
+                                <i class="fa-solid fa-play me-2"></i> Start Mining
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">Mining Console</div>
+                        <div class="card-body" style="height: 200px; overflow-y: auto; background: #000;">
+                            <ul id="mining-log" class="list-unstyled font-monospace small mb-0" style="color: #00ff00;">
+                                <li>> System ready...</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="card bg-success bg-opacity-10 border-success">
+                        <div class="card-body text-center py-5">
+                            <h5 class="card-title text-success mb-3">Mining Reward</h5>
+                            <h1 class="text-success fw-bold display-4">1.00</h1>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="explorer" class="content-section">
+            <h2 class="mb-4 text-white">Chain Explorer</h2>
+            <div class="card">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover mb-0 align-middle">
+                            <thead class="bg-dark text-muted">
+                                <tr>
+                                    <th class="p-3">Block #</th>
+                                    <th class="p-3">Timestamp</th>
+                                    <th class="p-3">Previous Hash</th>
+                                    <th class="p-3">Tx Count</th>
+                                    <th class="p-3">Proof</th>
+                                </tr>
+                            </thead>
+                            <tbody id="chain-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1050">
+    <div id="liveToast" class="toast align-items-center text-white bg-primary border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body" id="toast-message">Notification</div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/js-sha256/0.9.0/sha256.min.js"></script>
+<script src="https://unpkg.com/elliptic@6.5.4/dist/elliptic.min.js"></script>
+<script src="elliptic.js"></script> 
+
+<script>
+    const API_BASE = window.location.protocol === 'file:' ? 'http://127.0.0.1:5000' : '';
+    let ec = null;
+
+    window.addEventListener('load', () => {
+        try {
+            if (typeof elliptic === 'undefined') throw new Error("Elliptic Library not loaded");
+            ec = new elliptic.ec('secp256k1');
+        } catch (e) {
+            console.error(e);
+            document.getElementById('network-status').innerText = "Lib Error";
+        }
+        refreshData();
+        setInterval(refreshData, 5000); 
+    });
+
+    let myKeys = { priv: null, pub: null, address: null };
+
+    function showSection(sectionId) {
+        document.querySelectorAll('.content-section').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
+        document.getElementById(sectionId).classList.add('active');
+        
+        const map = {'dashboard':0, 'wallet':1, 'transact':2, 'mining':3, 'explorer':4};
+        document.querySelectorAll('.nav-link')[map[sectionId]].classList.add('active');
+    }
+
+    function generateKeys() {
+        if(!ec) { showToast("Library Error", true); return; }
+        try {
+            const key = ec.genKeyPair();
+            const priv = key.getPrivate('hex');
+            saveKeys(priv);
+            showToast("New Keys Generated!");
+        } catch(e) {
+            console.error(e);
+            showToast("Error generating keys", true);
+        }
+    }
+
+    function importKey() {
+        const input = document.getElementById('import-key-input').value.trim();
+        if(input) {
+            try {
+                saveKeys(input);
+                showToast("Key Imported");
+            } catch(e) {
+                showToast("Invalid Key", true);
+            }
+        }
+    }
+
+    function saveKeys(privKeyHex) {
+        const key = ec.keyFromPrivate(privKeyHex);
+        const pub = key.getPublic('hex');
+        const hashHex = sha256(pub); 
+        const address = '0x' + hashHex.substring(0, 40);
+
+        myKeys = { priv: privKeyHex, pub: pub, address: address };
+
+        document.getElementById('wallet-address').innerText = address;
+        document.getElementById('wallet-privkey').innerText = privKeyHex;
+        document.getElementById('tx-sender').value = address;
+        
+        checkWalletBalance(address);
+    }
+
+    async function refreshData() {
+        try {
+            const chainRes = await axios.get(API_BASE + '/chain');
+            const chain = chainRes.data.chain;
+            
+            let pool = [];
+            try { pool = (await axios.get(API_BASE + '/transactions')).data; } catch(e) {}
+            const walletRes = await axios.get(API_BASE + '/wallet');
+            
+            document.getElementById('dash-chain-length').innerText = chain.length;
+            document.getElementById('dash-pool-size').innerText = pool.length || 0;
+            document.getElementById('dash-balance').innerText = walletRes.data.balance;
+            document.getElementById('nav-node-id').innerText = walletRes.data.node_id.substring(0,8) + '...';
+            
+            const statusText = document.getElementById('network-status');
+            statusText.innerText = "Online";
+            statusText.className = "text-success fw-bold";
+            document.getElementById('status-dot').style.backgroundColor = "#22c55e"; 
+
+            const tbody = document.getElementById('chain-table-body');
+            tbody.innerHTML = '';
+            chain.slice().reverse().forEach(block => {
+                const date = new Date(block.timestamp * 1000).toLocaleString();
+                const row = `<tr>
+                    <td class="text-accent fw-bold">#${block.index}</td>
+                    <td class="text-muted small">${date}</td>
+                    <td><div class="hash-box py-1 px-2 border-0 bg-transparent" style="font-size:0.75rem; width: 120px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; color: #cbd5e1;">${block.previous_hash}</div></td>
+                    <td><span class="badge bg-secondary">${block.transactions.length} Tx</span></td>
+                    <td class="font-monospace text-muted small">${block.proof}</td>
+                </tr>`;
+                tbody.innerHTML += row;
+            });
+
+            const activityList = document.getElementById('recent-activity-list');
+            if(pool.length > 0) {
+                activityList.innerHTML = '';
+                pool.forEach(tx => {
+                    activityList.innerHTML += `<div class="d-flex justify-content-between border-bottom border-secondary py-2 px-3">
+                        <span class="text-truncate text-white" style="max-width: 120px;">${tx.sender}</span>
+                        <i class="fa-solid fa-arrow-right text-muted mx-2"></i>
+                        <span class="text-truncate text-white" style="max-width: 120px;">${tx.recipient}</span>
+                        <span class="badge bg-success ms-2">${tx.amount}</span>
+                    </div>`;
+                });
+            }
+
+            if(myKeys.address) checkWalletBalance(myKeys.address);
+
+        } catch (error) {
+            console.error(error);
+            const statusText = document.getElementById('network-status');
+            statusText.innerText = "Offline";
+            statusText.className = "text-danger fw-bold";
+            document.getElementById('status-dot').style.backgroundColor = "#dc2626";
+        }
+    }
+
+    async function mineBlock() {
+        const btn = document.getElementById('btn-mine');
+        const log = document.getElementById('mining-log');
+        
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-cog fa-spin me-2"></i> Mining...';
+        log.innerHTML += `<li>> Initializing Proof of Work...</li>`;
+        
+        try {
+            // FIX: Explicitly request this user's address for the reward
+            const myAddress = myKeys.address || "null"; 
+            const res = await axios.get(API_BASE + `/mine?address=${myAddress}`);
+            
+            setTimeout(() => {
+                showToast(`Block #${res.data.index} Mined!`);
+                
+                // --- FIX: Show SUCCESS message with HASH instead of Error ---
+                log.innerHTML += `<li class="text-success">> proof-of-work found</li>`;
+                // We construct a fake visual hash based on the proof for the "cool factor" user requested
+                // or use the real previous_hash if available
+                const displayHash = res.data.previous_hash || "00000000" + Math.random().toString(16).substr(2, 50);
+                log.innerHTML += `<li class="text-muted" style="word-break:break-all;">hash: ${displayHash}</li>`;
+                
+                if (myAddress !== "null") {
+                    log.innerHTML += `<li class="text-warning">> Reward (1.00) sent to Wallet.</li>`;
+                }
+                
+                btn.disabled = false;
+                btn.innerHTML = 'Start Mining';
+                log.scrollTop = log.scrollHeight;
+                refreshData();
+            }, 800);
+        } catch (error) {
+            // Only show error if it is ACTUALLY an error (status != 200)
+            log.innerHTML += `<li class="text-danger">> Error: Mining failed.</li>`;
+            btn.disabled = false;
+            btn.innerHTML = 'Start Mining';
+        }
+    }
+
+    async function sendTransaction() {
+        if(!myKeys.priv) { showToast("Generate keys first!", true); return; }
+        const recipient = document.getElementById('tx-recipient').value;
+        const amount = document.getElementById('tx-amount').value;
+        
+        try {
+            const payload = `${myKeys.pub}:${recipient}:${amount}`;
+            const msgHash = sha256(payload); 
+
+            const key = ec.keyFromPrivate(myKeys.priv);
+            const signature = key.sign(msgHash).toDER('hex');
+
+            const body = {
+                sender: myKeys.address,
+                recipient: recipient,
+                amount: parseInt(amount),
+                signature: signature
+            };
+
+            await axios.post(API_BASE + '/transactions/new', body);
+            showToast("Transaction Sent!");
+            document.getElementById('tx-recipient').value = '';
+            document.getElementById('tx-amount').value = '';
+            refreshData();
+        } catch (error) {
+            showToast("Transaction Failed", true);
+        }
+    }
+
+    async function checkWalletBalance(address) {
+        try {
+            const chain = (await axios.get(API_BASE + '/chain')).data.chain;
+            let balance = 0;
+            chain.forEach(block => {
+                block.transactions.forEach(tx => {
+                    if(tx.recipient === address) balance += tx.amount;
+                    if(tx.sender === address) balance -= tx.amount;
+                });
+            });
+            document.getElementById('wallet-specific-balance').innerText = balance.toFixed(2);
+        } catch(e) {}
+    }
+
+    function showToast(msg, isError = false) {
+        try {
+            const el = document.getElementById('liveToast');
+            const bsToast = new bootstrap.Toast(el); 
+            document.getElementById('toast-message').innerText = msg;
+            el.className = isError ? 'toast align-items-center text-white bg-danger border-0' : 'toast align-items-center text-white bg-primary border-0';
+            bsToast.show();
+        } catch(e) {
+            console.error("Toast error:", e);
+        }
+    }
+</script>
+</body>
+</html>
