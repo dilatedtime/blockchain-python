@@ -187,13 +187,11 @@ def consensus():
         }), 200
 
 if __name__ == '__main__':
-    from argparse import ArgumentParser
-
-    # This allows us to type "python node_server.py -p 5001" in the terminal
-    parser = ArgumentParser()
-    parser.add_argument('-p', '--port', default=5000, type=int, help='port to listen on')
-    args = parser.parse_args()
-    port = args.port
-
-    print(f"Node started on port {port}! Your Mining ID is: {blockchain.node_id}")
-    app.run(host='0.0.0.0', port=port, debug=True)
+    import os
+    
+    # Render dynamically assigns a PORT environment variable. 
+    # If it doesn't exist (like on your laptop), it safely defaults to 5000.
+    port = int(os.environ.get("PORT", 5000))
+    
+    print(f"Node started! Your Mining ID is: {blockchain.node_id}")
+    app.run(host='0.0.0.0', port=port)
