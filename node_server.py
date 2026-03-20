@@ -2,6 +2,8 @@ import hashlib
 import json
 from time import time
 from uuid import uuid4
+from urllib.parse import urlparse  # <--- Make sure this is here
+import requests
 from flask import Flask, jsonify, request, send_from_directory, render_template
 from flask_cors import CORS
 
@@ -151,6 +153,47 @@ def get_wallet():
         'node_id': blockchain.node_id,
         'balance': balance
     }), 200
+    
+@app.route('/nodes/register', methods=['POST'])
+def register_nodes():
+    values = request.get_json()
+    nodes = values.get('nodes')
+    
+    if nodes is None:
+        return "Error: Please supply a valid list of nodes", 400
+
+    for node in nodes:
+        blockchain.register_node(node)
+
+    return jsonify({
+        'message': 'New nodes have been added',
+        'total_nodes': list(blockchain.nodes)
+    }), 201
+
+@app.route('/nodes/resolve', methods=['GET'])
+def consensus():
+    # Trigger the longest chain rule
+    replaced = blockchain.resolve_conflicts()
+
+    if replaced:
+        return jsonify({
+            'message': 'Our chain was replaced by a longer, valid chain from the network.',
+            'new_chain': blockchain.chain
+        }), 200
+    else:
+        return jsonify({
+            'message': 'Our chain is authoritative (We have the longest chain).',
+            'chain': blockchain.chain
+        }), 200
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    from argparse import ArgumentParser
+
+    # This allows us to type "python node_server.py -p 5001" in the terminal
+    parser = ArgumentParser()
+    parser.add_argument('-p', '--port', default=5000, type=int, help='port to listen on')
+    args = parser.parse_args()
+    port = args.port
+
+    print(f"Node started on port {port}! Your Mining ID is: {blockchain.node_id}")
+    app.run(host='0.0.0.0', port=port, debug=True)
