@@ -15,6 +15,7 @@ class Blockchain:
     def __init__(self):
         self.chain = []
         self.transactions = []
+        self.nodes = set()  # <--- ADD THIS EXACT LINE
         self.node_id = str(uuid4()).replace("-", "")
         # Genesis block
         self.new_block(previous_hash="1", nonce=100)
