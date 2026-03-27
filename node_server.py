@@ -62,6 +62,60 @@ class Blockchain:
         guess = (json.dumps(transactions, sort_keys=True) + str(last_hash) + str(nonce)).encode()
         guess_hash = hashlib.sha256(guess).hexdigest()
         return guess_hash[:difficulty] == "0" * difficulty
+    
+    def register_node(self, address: str) -> None:
+        """Add a new node to the list of nodes"""
+        parsed_url = urlparse(address)
+        if parsed_url.netloc:
+            self.nodes.add(parsed_url.netloc)
+        elif parsed_url.path:
+            self.nodes.add(parsed_url.path)
+        else:
+            raise ValueError("Invalid URL")
+
+    def valid_chain(self, chain: list) -> bool:
+        """Determine if a given blockchain is valid"""
+        last_block = chain[0]
+        current_index = 1
+
+        while current_index < len(chain):
+            block = chain[current_index]
+            if block["previous_hash"] != self.hash(last_block):
+                return False
+            
+            # Check that the Proof of Work is correct
+            if not self.valid_proof(block["transactions"], block["previous_hash"], block["nonce"]):
+                return False
+
+            last_block = block
+            current_index += 1
+
+        return True
+
+    def resolve_conflicts(self) -> bool:
+        """Consensus Algorithm: Replaces our chain with the longest one in the network"""
+        neighbours = self.nodes
+        new_chain = None
+        max_length = len(self.chain)
+
+        for node in neighbours:
+            try:
+                response = requests.get(f"http://{node}/chain", timeout=3)
+                if response.status_code == 200:
+                    length = response.json()["length"]
+                    chain = response.json()["chain"]
+
+                    if length > max_length and self.valid_chain(chain):
+                        max_length = length
+                        new_chain = chain
+            except requests.exceptions.RequestException:
+                continue 
+
+        if new_chain:
+            self.chain = new_chain
+            return True
+
+        return False
 
 # ==========================================
 # PART 2: FLASK SERVER
