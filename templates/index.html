@@ -420,7 +420,7 @@
                     <td class="text-muted small">${date}</td>
                     <td><div class="hash-box py-1 px-2 border-0 bg-transparent" style="font-size:0.75rem; width: 120px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; color: #cbd5e1;">${block.previous_hash}</div></td>
                     <td><span class="badge bg-secondary">${block.transactions.length} Tx</span></td>
-                    <td class="font-monospace text-muted small">${block.proof}</td>
+                    <td class="font-monospace text-muted small">${block.nonce ?? block.proof}</td>
                 </tr>`;
                 tbody.innerHTML += row;
             });

@@ -167,7 +167,8 @@ def mine():
         'message': "New Block Forged",
         'index': block['index'],
         'transactions': block['transactions'],
-        'proof': block['proof'],
+        'proof': block['nonce'],
+        'nonce': block['nonce'],
         'previous_hash': block['previous_hash'],
     }), 200
 
