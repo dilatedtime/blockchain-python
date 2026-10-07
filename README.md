@@ -2,9 +2,9 @@
 
 Pilot Chain is an educational Proof-of-Work blockchain built with Python and Flask. It includes a browser dashboard for creating a local secp256k1 wallet, submitting transactions, mining blocks, viewing the chain, registering peer nodes, and resolving conflicts with the longest-valid-chain rule.
 
-[Project website](https://dilatedtime.github.io/blockchain-python/) | [Source code](https://github.com/dilatedtime/blockchain-python)
+[GitHub Pages dashboard](https://dilatedtime.github.io/blockchain-python/) | [Render deployment](https://blockchain-python-it0b.onrender.com/) | [Source code](https://github.com/dilatedtime/blockchain-python)
 
-> The project website is a static overview hosted with GitHub Pages. The blockchain node is a Flask application, so you must run it locally or deploy it to a Python-compatible host to use the dashboard and API.
+> The GitHub Pages dashboard uses the same interface as the Render deployment and connects to its live Flask API. GitHub Pages hosts the browser files, while Render runs the blockchain node. Both URLs therefore show and change the same in-memory chain.
 
 ## Features
 
@@ -102,7 +102,7 @@ blockchain-python/
 ├── templates/              # Pilot Chain dashboard and local elliptic library
 ├── blockchain/             # Packaged blockchain implementation and Flask UI
 ├── client/                 # RSA transaction client
-├── docs/                   # Static GitHub Pages project website
+├── docs/                   # GitHub Pages copy of the live dashboard
 ├── requirements.txt        # Runtime dependencies
 ├── Pipfile                  # Pipenv configuration
 └── config.ini              # Host, port, and debug settings for packaged apps
